@@ -143,12 +143,12 @@ export abstract class IotShadowEndpoint<ShadowType extends object> extends Event
     }
 
     private diffObject<T extends object>(newState: T, currentState: T): T | undefined {
-        if (!isEqual(newState, currentState)) {
+        if (currentState == undefined) {
+            return newState
+        } else if (!isEqual(newState, currentState)) {
             const mapped = mapValues(newState, (newValue, key) => {
                 const currentValue = currentState[key]
-                if (currentValue == undefined) {
-                    return newValue
-                } else if (!isEqual(newValue, currentValue)) {
+                if (!isEqual(newValue, currentValue)) {
                     if (!isArray(newValue) && isObject(newValue)) {
                         const childObj = this.diffObject(newValue, currentValue)
                         if (!isEmpty(childObj)) {
