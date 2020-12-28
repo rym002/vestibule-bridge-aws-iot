@@ -68,10 +68,10 @@ export abstract class IotShadowEndpoint<ShadowType extends object> extends Event
     protected abstract refreshState(): Promise<void>
 
     private checkVersion(newVersion: number) {
-        const ret =  this.shadowVersion < newVersion
-        if (ret){
+        const ret = this.shadowVersion < newVersion
+        if (ret) {
             this.shadowVersion = newVersion
-        }else{
+        } else {
             console.error('Old Version received: %s Current Version: %s', newVersion, this.shadowVersion)
         }
         return ret
@@ -102,7 +102,7 @@ export abstract class IotShadowEndpoint<ShadowType extends object> extends Event
     private async shadowUpdateAcceptedHandler(error?: iotshadow.IotShadowError, response?: iotshadow.model.UpdateShadowResponse) {
         this.handleShadowError('Update', error)
         if (response) {
-            if (this.checkVersion(response.version)){
+            if (this.checkVersion(response.version)) {
                 this.remoteShadow = <ShadowType>response.state.reported
             }
         }
@@ -146,7 +146,9 @@ export abstract class IotShadowEndpoint<ShadowType extends object> extends Event
         if (!isEqual(newState, currentState)) {
             const mapped = mapValues(newState, (newValue, key) => {
                 const currentValue = currentState[key]
-                if (!isEqual(newValue, currentValue)) {
+                if (currentValue == undefined) {
+                    return newValue
+                } else if (!isEqual(newValue, currentValue)) {
                     if (!isArray(newValue) && isObject(newValue)) {
                         const childObj = this.diffObject(newValue, currentValue)
                         if (!isEmpty(childObj)) {

@@ -431,6 +431,22 @@ describe('Endpoint test', () => {
             expect(desired)
                 .to.be.null
         })
+        it('should return if not defined in state', () => {
+            const o2 = {
+                'o1': {
+                    's12': 's11v'
+                },
+            }
+            const tester = new EndpointTest({}, 'state')
+            const shadow = tester.testShadow(o2)
+            const reported = shadow.reported
+            const desired = shadow.desired
+            expect(reported)
+                .to.eql(o2)
+            expect(desired)
+                .to.have.property('o1')
+                .to.be.null
+        })
         it('should return null nested object', () => {
             const o2 = {
                 'o1': null,
