@@ -1,2 +1,2 @@
-# vestibule-bridge-aws-iot
-AWS IOT connection plugin
+# vestibule-bridge-gateway-aws
+* AWS Gateway ![Build Status](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiSzllK2NIUWEzRmxObFdzcEsvaC9UdSs5UWFPT0phRnVOVUUzTDgvUDNabWl2cldtOGRQQlVONmNFd21JaTNmdS9HZXhBb0tCaGxkZG8wMjBXdE9Ibm5VPSIsIml2UGFyYW1ldGVyU3BlYyI6Ik9ZY2FPV1p5UXo1N3BCMVAiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
