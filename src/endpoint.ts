@@ -9,7 +9,7 @@ interface NamedShadowRequest {
     thingName: string;
 }
 
-export interface IotShadowEndpoint extends EndpointConnector {
+export interface IotShadowEndpoint<ShadowType extends object> extends EndpointConnector {
     /**
      * Groups updates by deltaId by watching all promises for completion
      * Each promise is responsible to complete its update task
@@ -17,13 +17,22 @@ export interface IotShadowEndpoint extends EndpointConnector {
      * @param deltaId id of related tasks
      */
     watchDeltaUpdate(promise: Promise<void>, deltaId: symbol): void
+    /**
+     * Indicates all changes have been sent.
+     * Connector should update the shadow with the changes based on deltaId
+     * @param deltaId change id
+     */
+    completeDeltaState(deltaId: symbol): Promise<void>;
+
+    readonly reportedState: ShadowType
 }
-export abstract class AbstractIotShadowEndpoint<ShadowType extends object> extends EventEmitter implements IotShadowEndpoint {
+export abstract class AbstractIotShadowEndpoint<ShadowType extends object> extends EventEmitter implements IotShadowEndpoint<ShadowType> {
     protected readonly shadowClient: iotshadow.IotShadowClient
     protected readonly namedShadowRequest: NamedShadowRequest
-    protected remoteShadow?: ShadowType
+    protected _reportedState: ShadowType = <any>{}
     private shadowVersion: number = 0
     private readonly deltaPromises = new Map<symbol, Promise<void>[]>()
+    private readonly deltaEndpointsState = new Map<symbol, ShadowType>();
     constructor(readonly endpointId: string) {
         super()
         const appConfig = iotConfig()
@@ -34,6 +43,9 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         }
     }
 
+    get reportedState(){
+        return this._reportedState
+    }
     public async subscribeMessages(): Promise<void> {
         const deleteAccepted = await this.shadowClient
             .subscribeToDeleteNamedShadowAccepted(this.namedShadowRequest,
@@ -138,7 +150,7 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         this.handleShadowError('Update', error)
         if (response) {
             if (this.checkVersion(response.version)) {
-                this.remoteShadow = <ShadowType>response.state.reported
+                this._reportedState = <ShadowType>response.state.reported
             }
         }
     }
@@ -169,7 +181,7 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
     }
 
     protected createShadow(state: ShadowType): ShadowState {
-        const reported = this.diffObject(state, this.remoteShadow)
+        const reported = this.diffObject(state, this.reportedState)
         const desired = this.mapDesiredObject(reported, true)
         return {
             desired: desired,
@@ -233,5 +245,18 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
             }
         }).filter(value => value !== null)
         return isEmpty(mapped) ? mapped : null
+    }
+    protected getDeltaEndpoint(deltaId: symbol) {
+        let deltaEndpoint = this.deltaEndpointsState.get(deltaId);
+        if (!deltaEndpoint) {
+            deltaEndpoint = <any>{};
+            this.deltaEndpointsState.set(deltaId, deltaEndpoint);
+        }
+        return deltaEndpoint;
+    }
+    async completeDeltaState(deltaId: symbol) {
+        await this.waitDeltaPromises(deltaId);
+        this.publishReportedState(this.deltaEndpointsState.get(deltaId))
+        this.deltaEndpointsState.delete(deltaId);
     }
 }

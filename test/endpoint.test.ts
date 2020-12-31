@@ -7,9 +7,9 @@ import * as iot from '../src/iot'
 
 
 class EndpointTest extends AbstractIotShadowEndpoint<{}>{
-    constructor(remoteShadow: {}, endpointId: string) {
+    constructor(initalShadow: {}, endpointId: string) {
         super(endpointId)
-        this.remoteShadow = remoteShadow
+        this._reportedState = initalShadow
     }
     public async handleDeltaState(state: {}): Promise<void> {
     }
@@ -18,10 +18,6 @@ class EndpointTest extends AbstractIotShadowEndpoint<{}>{
 
     public testShadow(state: {}) {
         return this.createShadow(state)
-    }
-
-    public get testRemoteShadow() {
-        return this.remoteShadow;
     }
 }
 
@@ -143,7 +139,7 @@ describe('Endpoint test', () => {
                         reported: inputState
                     }
                 })
-            expect(instance.testRemoteShadow).to.eql(inputState)
+            expect(instance.reportedState).to.eql(inputState)
         })
         it('should publish delete shadow', async function () {
             const sandbox: SinonSandbox = this.test['sandbox']
