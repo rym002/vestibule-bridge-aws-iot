@@ -9,7 +9,16 @@ interface NamedShadowRequest {
     thingName: string;
 }
 
-export abstract class IotShadowEndpoint<ShadowType extends object> extends EventEmitter implements EndpointConnector {
+export interface IotShadowEndpoint extends EndpointConnector {
+    /**
+     * Groups updates by deltaId by watching all promises for completion
+     * Each promise is responsible to complete its update task
+     * @param promise updated task to watch
+     * @param deltaId id of related tasks
+     */
+    watchDeltaUpdate(promise: Promise<void>, deltaId: symbol): void
+}
+export abstract class AbstractIotShadowEndpoint<ShadowType extends object> extends EventEmitter implements IotShadowEndpoint {
     protected readonly shadowClient: iotshadow.IotShadowClient
     protected readonly namedShadowRequest: NamedShadowRequest
     protected remoteShadow?: ShadowType
@@ -65,12 +74,6 @@ export abstract class IotShadowEndpoint<ShadowType extends object> extends Event
         }
     }
 
-    /**
-     * Groups updates by deltaId by watching all promises for completion
-     * Each promise is responsible to complete its update task
-     * @param promise updated task to watch
-     * @param deltaId id of related tasks
-     */
     watchDeltaUpdate(promise: Promise<void>, deltaId: symbol) {
         let transPromises = this.deltaPromises.get(deltaId);
         if (!transPromises) {

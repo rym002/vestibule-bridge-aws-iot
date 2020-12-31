@@ -2,7 +2,7 @@ import { registerModule } from '@vestibule-link/bridge';
 import { startModule as startServiceProvider } from '@vestibule-link/bridge-service-provider'
 import { initConnection } from './iot';
 
-export { IotShadowEndpoint } from './endpoint'
+export { IotShadowEndpoint, AbstractIotShadowEndpoint } from './endpoint'
 export { awsConnection } from './iot'
 let moduleId: symbol | undefined;
 

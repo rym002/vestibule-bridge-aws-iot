@@ -2,11 +2,11 @@ import { mqtt } from 'aws-iot-device-sdk-v2'
 import { expect } from 'chai'
 import 'mocha'
 import { createSandbox, match, SinonSandbox, SinonStubbedInstance, SinonStubbedMember, StubbableType } from 'sinon'
-import { IotShadowEndpoint } from '../src'
+import { AbstractIotShadowEndpoint } from '../src'
 import * as iot from '../src/iot'
 
 
-class EndpointTest extends IotShadowEndpoint<{}>{
+class EndpointTest extends AbstractIotShadowEndpoint<{}>{
     constructor(remoteShadow: {}, endpointId: string) {
         super(endpointId)
         this.remoteShadow = remoteShadow
