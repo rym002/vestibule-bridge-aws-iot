@@ -1,4 +1,5 @@
 import { registerModule } from '@vestibule-link/bridge';
+import { startModule as startServiceProvider } from '@vestibule-link/bridge-service-provider'
 import { initConnection } from './iot';
 
 export { IotShadowEndpoint } from './endpoint'
@@ -11,7 +12,10 @@ export function startModule() {
             name: 'gateway-aws',
             init: async () => {
                 await initConnection();
-            }
+            },
+            depends: [
+                startServiceProvider()
+            ]
         })
     }
     return moduleId;

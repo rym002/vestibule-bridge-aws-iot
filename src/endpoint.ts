@@ -3,17 +3,18 @@ import { ShadowState } from "aws-iot-device-sdk-v2/dist/iotshadow/model";
 import { EventEmitter } from "events";
 import { isArray, isEmpty, isEqual, isObject, mapValues, pickBy } from "lodash";
 import { iotConfig, awsConnection } from "./iot";
-
+import { EndpointConnector } from '@vestibule-link/bridge-service-provider'
 interface NamedShadowRequest {
     shadowName: string;
     thingName: string;
 }
 
-export abstract class IotShadowEndpoint<ShadowType extends object> extends EventEmitter {
+export abstract class IotShadowEndpoint<ShadowType extends object> extends EventEmitter implements EndpointConnector {
     protected readonly shadowClient: iotshadow.IotShadowClient
     protected readonly namedShadowRequest: NamedShadowRequest
     protected remoteShadow?: ShadowType
     private shadowVersion: number = 0
+    private readonly deltaPromises = new Map<symbol, Promise<void>[]>()
     constructor(readonly endpointId: string) {
         super()
         const appConfig = iotConfig()
@@ -64,9 +65,39 @@ export abstract class IotShadowEndpoint<ShadowType extends object> extends Event
         }
     }
 
-    protected abstract handleDeltaState(state: ShadowType): Promise<void>
-    protected abstract refreshState(): Promise<void>
+    /**
+     * Groups updates by deltaId by watching all promises for completion
+     * Each promise is responsible to complete its update task
+     * @param promise updated task to watch
+     * @param deltaId id of related tasks
+     */
+    watchDeltaUpdate(promise: Promise<void>, deltaId: symbol) {
+        let transPromises = this.deltaPromises.get(deltaId);
+        if (!transPromises) {
+            transPromises = [];
+            this.deltaPromises.set(deltaId, transPromises);
+        }
+        transPromises.push(promise
+            .catch((err) => {
+                console.log(err)
+            }));
+    }
 
+    /**
+     * Waits for all promises to complete.
+     * Used before making updates that depend on promises to complete
+     * @param deltaId id of related tasks
+     */
+    protected async waitDeltaPromises(deltaId: symbol) {
+        const promises = this.deltaPromises.get(deltaId);
+        if (promises) {
+            await Promise.all(promises);
+            this.deltaPromises.delete(deltaId);
+        }
+    }
+
+    protected abstract handleDeltaState(state: ShadowType): Promise<void>
+    public abstract refresh(deltaId: symbol): Promise<void>
     private checkVersion(newVersion: number) {
         const ret = this.shadowVersion < newVersion
         if (ret) {
@@ -94,7 +125,8 @@ export abstract class IotShadowEndpoint<ShadowType extends object> extends Event
         this.handleShadowError('Delete', error)
         if (response) {
             console.info("%s shadow deleted", this.endpointId)
-            await this.refreshState()
+            const deltaId = Symbol()
+            await this.refresh(deltaId)
             this.shadowVersion = 0
         }
     }

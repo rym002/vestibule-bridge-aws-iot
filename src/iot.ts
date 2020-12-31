@@ -37,7 +37,6 @@ async function createConnection(): Promise<mqtt.MqttClientConnection> {
 
     const bootstrap = new io.ClientBootstrap()
     const client = new mqtt.MqttClient(bootstrap)
-    //TODO expand to support all props
     const config = iot.AwsIotMqttConnectionConfigBuilder
         .new_mtls_builder_from_path(appConfig.certPath, appConfig.keyPath)
         .with_certificate_authority_from_path(appConfig.caDirPath, appConfig.caFilePath)

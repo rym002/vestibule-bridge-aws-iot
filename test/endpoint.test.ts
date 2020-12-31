@@ -13,7 +13,7 @@ class EndpointTest extends IotShadowEndpoint<{}>{
     }
     public async handleDeltaState(state: {}): Promise<void> {
     }
-    public async refreshState(): Promise<void> {
+    public async refresh(deltaId: symbol): Promise<void> {
     }
 
     public testShadow(state: {}) {
@@ -114,7 +114,7 @@ describe('Endpoint test', () => {
             const endpointId = 'refreshState'
             const topic = `$aws/things/${clientId}/shadow/name/${endpointId}/delete/accepted`
             const instance = new EndpointTest({}, endpointId)
-            const spy = sandbox.spy(instance, 'refreshState')
+            const spy = sandbox.spy(instance, 'refresh')
             await instance.subscribeMessages()
             await emitTopic(
                 topicHandlerMap,
