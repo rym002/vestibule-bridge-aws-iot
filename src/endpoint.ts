@@ -114,10 +114,8 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
     protected abstract handleDeltaState(state: ShadowType): Promise<void>
     public abstract refresh(deltaId: symbol): Promise<void>
     private checkVersion(newVersion: number) {
-        const ret = this.shadowVersion < newVersion
-        if (ret) {
-            this.shadowVersion = newVersion
-        } else {
+        const ret = this.shadowVersion <= newVersion
+        if (!ret) {
             console.error('Old Version received: %s Current Version: %s', newVersion, this.shadowVersion)
         }
         return ret
@@ -150,6 +148,7 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         this.handleShadowError('Update', error)
         if (response) {
             if (this.checkVersion(response.version)) {
+                this.shadowVersion = response.version
                 this._reportedState = <ShadowType>response.state.reported
             }
         }
