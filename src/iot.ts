@@ -49,12 +49,8 @@ async function createConnection(): Promise<mqtt.MqttClientConnection> {
 
     //Timer is needed or else connect hangs and does not return
     const timer = setTimeout(() => { }, 60 * 1000);
-    const connected = await connection.connect()
+    const session = await connection.connect()
     clearTimeout(timer)
-
-    if (!connected) {
-        throw new Error("Connection failed")
-    }
-
+    console.info(`Created AWS IOT Connection with session ${session}`)
     return connection;
 }
