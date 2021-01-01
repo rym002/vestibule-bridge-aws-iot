@@ -43,7 +43,7 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         }
     }
 
-    get reportedState(){
+    get reportedState() {
         return this._reportedState
     }
     public async subscribeMessages(): Promise<void> {
@@ -173,7 +173,7 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         if (shadow.reported) {
             this.shadowClient.publishUpdateNamedShadow({
                 ...this.namedShadowRequest,
-                ...shadow
+                state: shadow
             }, mqtt.QoS.AtLeastOnce)
         } else {
             console.info('Shadow Reported not changed, skipping updated')
