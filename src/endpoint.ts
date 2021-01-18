@@ -2,8 +2,11 @@ import { EndpointConnector } from '@vestibule-link/bridge-service-provider';
 import { iotshadow, mqtt } from "aws-iot-device-sdk-v2";
 import { ShadowState } from "aws-iot-device-sdk-v2/dist/iotshadow/model";
 import { EventEmitter } from "events";
-import { isArray, isEmpty, isEqual, isObject, mapValues, pickBy } from "lodash";
+import { applyPatch, compare, RemoveOperation, ReplaceOperation } from 'fast-json-patch';
+import { isEmpty } from "lodash";
+import { basename, dirname } from 'path';
 import { awsConnection, iotConfig } from "./iot";
+import { v4 as uuid } from 'uuid'
 interface NamedShadowRequest {
     shadowName: string;
     thingName: string;
@@ -26,6 +29,12 @@ export interface IotShadowEndpoint<ShadowType extends object> extends EndpointCo
 
     readonly reportedState: ShadowType
 }
+
+type VoidResolve = () => void
+interface PromiseResolver {
+    resolve: VoidResolve
+    reject: (reason: any) => void
+}
 export abstract class AbstractIotShadowEndpoint<ShadowType extends object> extends EventEmitter implements IotShadowEndpoint<ShadowType> {
     protected readonly shadowClient: iotshadow.IotShadowClient
     protected readonly namedShadowRequest: NamedShadowRequest
@@ -33,6 +42,7 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
     private shadowVersion: number = 0
     private readonly deltaPromises = new Map<symbol, Promise<void>[]>()
     private readonly deltaEndpointsState = new Map<symbol, ShadowType>();
+    private readonly tokenResolvers = new Map<string, PromiseResolver>()
     constructor(readonly endpointId: string) {
         super()
         const appConfig = iotConfig()
@@ -147,11 +157,20 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
     private async shadowUpdatedHandler(error?: iotshadow.IotShadowError, response?: iotshadow.model.ShadowUpdatedEvent) {
         this.handleShadowError('Update', error)
         if (response) {
-            const current = response.current
-            if (this.checkVersion(current.version)) {
-                this.shadowVersion = current.version
-                this._reportedState = <ShadowType>current.state.reported
+            try {
+                const current = response.current
+                if (this.checkVersion(current.version)) {
+                    this.shadowVersion = current.version
+                    this._reportedState = <ShadowType>current.state.reported
+                }
+            } finally {
+                const token: string | undefined = response['clientToken']
+                const tokenResolver = this.tokenResolvers.get(token)
+                if (tokenResolver) {
+                    tokenResolver.resolve()
+                }
             }
+
         }
     }
 
@@ -159,6 +178,13 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         this.handleShadowError('Shadow Error', error)
         if (response) {
             console.error('%s Shadow error %o', this.endpointId, response)
+            const clientToken = response.clientToken
+            if (clientToken) {
+                const tokenResolver = this.tokenResolvers.get(clientToken)
+                if (tokenResolver) {
+                    tokenResolver.reject(response)
+                }
+            }
         }
     }
 
@@ -168,86 +194,111 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         }
     }
 
-    protected publishReportedState(state?: ShadowType) {
-        if (state) {
-            const shadow = this.createShadow(state)
-            if (shadow.reported) {
-                this.shadowClient.publishUpdateNamedShadow({
+    protected async publishReportedState(stateUpdate?: ShadowType) {
+        if (stateUpdate) {
+            const state = this.createShadow(stateUpdate)
+            if (!isEmpty(state.reported)) {
+                const clientToken = uuid()
+                let timeoutId: NodeJS.Timeout
+                const shadowUpdate = new Promise<void>((resolve, reject) => {
+                    this.tokenResolvers.set(clientToken, {
+                        reject,
+                        resolve
+                    })
+                    timeoutId = setTimeout(() => {
+                        const resolver = this.tokenResolvers.get(clientToken)
+                        if (resolver) {
+                            resolver.reject(`Shadow update timeout. No document update received for clientToken:${clientToken}`)
+                        }
+                    }, iotConfig().shadowUpdateTimeout);
+                })
+                await this.shadowClient.publishUpdateNamedShadow({
                     ...this.namedShadowRequest,
-                    state: shadow
+                    state,
+                    clientToken
                 }, mqtt.QoS.AtLeastOnce)
+                try {
+                    await shadowUpdate
+                    clearTimeout(timeoutId)
+                } finally {
+                    this.tokenResolvers.delete(clientToken)
+                }
             } else {
                 console.info('Shadow Reported not changed, skipping updated')
             }
         }
     }
 
+    /**
+     * 
+     * @param state requested changes. This can be partial updates
+     */
     protected createShadow(state: ShadowType): ShadowState {
-        const reported = this.diffObject(state, this.reportedState)
-        const desired = this.mapDesiredObject(reported, true)
+        const deltaPatchResult = this.computeStateDiff(state);
+        const reported = deltaPatchResult
+        const desired = this.createDesired(reported)
         return {
-            desired: desired,
-            reported: reported
+            desired,
+            reported
         }
     }
 
-    private diffObject<T extends object>(newState: T, currentState: T): T | undefined {
-        if (currentState == undefined) {
-            return newState
-        } else if (!isEqual(newState, currentState)) {
-            const mapped = mapValues(newState, (newValue, key) => {
-                const currentValue = currentState[key]
-                if (!isEqual(newValue, currentValue)) {
-                    if (!isArray(newValue) && isObject(newValue)) {
-                        const childObj = this.diffObject(newValue, currentValue)
-                        if (!isEmpty(childObj)) {
-                            return childObj
-                        } else {
-                            return undefined
-                        }
-                    } else {
-                        return newValue
-                    }
+    private computeStateDiff(state: ShadowType): ShadowType {
+        // Find the difference between current and updates
+        const stateDiff = compare(this.reportedState, state);
+        // Filter remove operation because state is a partial update
+        const removeOperations = stateDiff
+            .filter(operation => operation.op !== 'remove')
+            .map((operation): RemoveOperation => {
+                // Convert operation to remove. 
+                const objName = basename(operation.path);
+                const parsed = Number.parseInt(objName);
+                if (!isNaN(parsed)) {
+                    // Array member, use the array path
+                    const parentName = dirname(operation.path);
+                    return {
+                        op: 'remove',
+                        path: parentName
+                    };
                 } else {
-                    return undefined
+                    return {
+                        op: 'remove',
+                        path: operation.path
+                    };
                 }
-            })
-            const filtered = pickBy(mapped, (value) => {
-                return value !== undefined
-            })
-            return isEmpty(filtered) ? undefined : <T>filtered
-        } else {
-            return undefined
-        }
-    }
-    private mapDesiredObject(state: object, rootObject: boolean): object | null {
-        const mapped = mapValues(state, (value, key) => {
-            if (isObject(value)) {
-                return this.mapDesiredObject(value, false)
-            } else if (isArray(value)) {
-                return this.mapDesiredArray(value)
-            } else {
-                return null
-            }
-        })
-        const filtered = rootObject ? mapped : pickBy(mapped, (value) => {
-            return value !== null
-        })
 
-        return isEmpty(filtered) ? null : filtered
+            });
+        // Apply patch to remove all unmatched paths, left with matched in result
+        const matchedPathsResult = applyPatch(state, removeOperations, false, false);
+        // Create patch to remove all matches
+        const matchedDiff = compare(matchedPathsResult.newDocument, {});
+
+        // Filter operations that have a common parent. 
+        // This prevents removing the parent when the child has a change
+        const filteredMatch = matchedDiff.filter(match => {
+            return stateDiff.map(stateOp => {
+                return stateOp.path.startsWith(match.path);
+            }).filter(value => value).length == 0;
+        });
+        // Remove current state matches from request
+        const deltaPatchResult = applyPatch(state, filteredMatch, false, false);
+        return deltaPatchResult.newDocument;
     }
-    private mapDesiredArray(state: any[]): any[] | null {
-        const mapped = state.map(value => {
-            if (isObject(value)) {
-                return this.mapDesiredObject(value, false)
-            } else if (isArray(value)) {
-                return this.mapDesiredArray(value)
-            } else {
-                return null;
+
+    private createDesired(shadow: ShadowType): ShadowType | null {
+        const diffs = compare({}, shadow)
+        const nullOperations = diffs.map((operation): ReplaceOperation<null> => {
+            return {
+                op: 'replace',
+                path: operation.path,
+                value: null
             }
-        }).filter(value => value !== null)
-        return isEmpty(mapped) ? mapped : null
+        })
+        const patchResult = applyPatch(shadow, nullOperations, false, false)
+        const ret = patchResult.newDocument
+        return isEmpty(ret) ? null : ret
     }
+
     protected getDeltaEndpoint(deltaId: symbol) {
         let deltaEndpoint = this.deltaEndpointsState.get(deltaId);
         if (!deltaEndpoint) {
@@ -257,8 +308,12 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         return deltaEndpoint;
     }
     async completeDeltaState(deltaId: symbol) {
-        await this.waitDeltaPromises(deltaId);
-        this.publishReportedState(this.deltaEndpointsState.get(deltaId))
-        this.deltaEndpointsState.delete(deltaId);
+        try {
+            await this.waitDeltaPromises(deltaId);
+            await this.publishReportedState(this.deltaEndpointsState.get(deltaId))
+            this.deltaEndpointsState.delete(deltaId);
+        } catch (err) {
+            console.log('Delta error %o', err)
+        }
     }
 }

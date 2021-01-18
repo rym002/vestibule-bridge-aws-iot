@@ -9,7 +9,8 @@ export function iotConfig() {
         caFilePath: process.env['AWS_CA_FILE_PATH'],
         clientId: process.env['AWS_CLIENT_ID'],
         endpoint: process.env['AWS_IOT_ENDPOINT'],
-        mqttLogLevel: process.env['AWS_MQTT_LOG_LEVEL']
+        mqttLogLevel: process.env['AWS_MQTT_LOG_LEVEL'],
+        shadowUpdateTimeout: process.env['AWS_SHADOW_UPDATE_TIMEOUT']?Number(process.env['AWS_SHADOW_UPDATE_TIMEOUT']):1000
     }
 
 }

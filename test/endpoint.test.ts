@@ -166,313 +166,321 @@ describe('Endpoint test', () => {
             }
         }
 
-        it('should diff booleans', () => {
+        context('Primitives', () => {
+            it('should diff booleans', () => {
 
-            const o2 = {
-                'b1': false,
-                'n1': 123,
-                's1': 's1v'
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.have.property('b1')
-                .to.eql(false)
-            expect(reported)
-                .to.not.have.property('n1')
-            expect(reported)
-                .to.not.have.property('s1')
-            expect(reported)
-                .to.not.have.property('a1')
-            expect(reported)
-                .to.not.have.property('o1')
-            expect(desired)
-                .to.have.property('b1')
-                .to.be.null
-            expect(desired)
-                .to.not.have.property('n1')
-            expect(desired)
-                .to.not.have.property('s1')
-            expect(desired)
-                .to.not.have.property('a1')
-            expect(desired)
-                .to.not.have.property('o1')
-        })
-        it('should diff numbers', () => {
-            const o2 = {
-                'b1': true,
-                'n1': 456,
-                's1': 's1v'
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.have.property('n1')
-                .to.eql(456)
-            expect(reported)
-                .to.not.have.property('b1')
-            expect(reported)
-                .to.not.have.property('s1')
-            expect(reported)
-                .to.not.have.property('a1')
-            expect(reported)
-                .to.not.have.property('o1')
-            expect(desired)
-                .to.have.property('n1')
-                .to.be.null
-            expect(desired)
-                .to.not.have.property('b1')
-            expect(desired)
-                .to.not.have.property('s1')
-            expect(desired)
-                .to.not.have.property('a1')
-            expect(desired)
-                .to.not.have.property('o1')
-        })
-        it('should diff strings', () => {
-            const o2 = {
-                'b1': true,
-                'n1': 123,
-                's1': 'newvalue'
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.have.property('s1')
-                .to.eql('newvalue')
-            expect(reported)
-                .to.not.have.property('b1')
-            expect(reported)
-                .to.not.have.property('n1')
-            expect(reported)
-                .to.not.have.property('a1')
-            expect(reported)
-                .to.not.have.property('o1')
-        })
-
-        it('should ignore like arrays', () => {
-            const o2 = {
-                'b1': true,
-                'n1': 123,
-                's1': 's1v',
-                's2': 'string',
-                'a1': [
-                    123
-                ]
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.have.property('s2')
-                .to.eql('string')
-            expect(reported)
-                .to.not.have.property('s1')
-            expect(reported)
-                .to.not.have.property('b1')
-            expect(reported)
-                .to.not.have.property('n1')
-            expect(reported)
-                .to.not.have.property('a1')
-            expect(reported)
-                .to.not.have.property('o1')
-            expect(desired)
-                .to.have.property('s2')
-                .to.be.null
-            expect(desired)
-                .to.not.have.property('s1')
-            expect(desired)
-                .to.not.have.property('b1')
-            expect(desired)
-                .to.not.have.property('n1')
-            expect(desired)
-                .to.not.have.property('a1')
-            expect(desired)
-                .to.not.have.property('o1')
-        })
-        it('should return changed arrays', () => {
-            const o2 = {
-                'b1': true,
-                'n1': 123,
-                's1': 's1v',
-                'a1': [
-                    123,
-                    456
-                ]
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.have.property('a1')
-                .to.have.length(2)
-            expect(reported)
-                .to.not.have.property('s1')
-            expect(reported)
-                .to.not.have.property('b1')
-            expect(reported)
-                .to.not.have.property('n1')
-            expect(reported)
-                .to.not.have.property('o1')
-            expect(desired)
-                .to.have.property('a1')
-                .to.be.null
-            expect(desired)
-                .to.not.have.property('s1')
-            expect(desired)
-                .to.not.have.property('b1')
-            expect(desired)
-                .to.not.have.property('n1')
-            expect(desired)
-                .to.not.have.property('o1')
+                const o2 = {
+                    'b1': false,
+                    'n1': 123,
+                    's1': 's1v'
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.have.property('b1')
+                    .to.eql(false)
+                expect(reported)
+                    .to.not.have.property('n1')
+                expect(reported)
+                    .to.not.have.property('s1')
+                expect(reported)
+                    .to.not.have.property('a1')
+                expect(reported)
+                    .to.not.have.property('o1')
+                expect(desired)
+                    .to.have.property('b1')
+                    .to.be.null
+                expect(desired)
+                    .to.not.have.property('n1')
+                expect(desired)
+                    .to.not.have.property('s1')
+                expect(desired)
+                    .to.not.have.property('a1')
+                expect(desired)
+                    .to.not.have.property('o1')
+            })
+            it('should diff numbers', () => {
+                const o2 = {
+                    'b1': true,
+                    'n1': 456,
+                    's1': 's1v'
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.have.property('n1')
+                    .to.eql(456)
+                expect(reported)
+                    .to.not.have.property('b1')
+                expect(reported)
+                    .to.not.have.property('s1')
+                expect(reported)
+                    .to.not.have.property('a1')
+                expect(reported)
+                    .to.not.have.property('o1')
+                expect(desired)
+                    .to.have.property('n1')
+                    .to.be.null
+                expect(desired)
+                    .to.not.have.property('b1')
+                expect(desired)
+                    .to.not.have.property('s1')
+                expect(desired)
+                    .to.not.have.property('a1')
+                expect(desired)
+                    .to.not.have.property('o1')
+            })
+            it('should diff strings', () => {
+                const o2 = {
+                    'b1': true,
+                    'n1': 123,
+                    's1': 'newvalue'
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.have.property('s1')
+                    .to.eql('newvalue')
+                expect(reported)
+                    .to.not.have.property('b1')
+                expect(reported)
+                    .to.not.have.property('n1')
+                expect(reported)
+                    .to.not.have.property('a1')
+                expect(reported)
+                    .to.not.have.property('o1')
+            })
+            it('should return empty object if no new changes', () => {
+                const o2 = {
+                    'b1': true,
+                    'n1': 123,
+                    's1': undefined,
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.eql({})
+                expect(desired)
+                    .to.be.null
+            })
+            it('should return null', () => {
+                const o2 = {
+                    'b1': true,
+                    'n1': 123,
+                    's1': null,
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.have.property('s1')
+                    .to.be.null
+                expect(reported)
+                    .to.not.have.property('b1')
+                expect(reported)
+                    .to.not.have.property('n1')
+                expect(reported)
+                    .to.not.have.property('a1')
+                expect(reported)
+                    .to.not.have.property('o1')
+                expect(desired)
+                    .to.have.property('s1')
+                    .to.be.null
+                expect(desired)
+                    .to.not.have.property('b1')
+                expect(desired)
+                    .to.not.have.property('n1')
+                expect(desired)
+                    .to.not.have.property('a1')
+                expect(desired)
+                    .to.not.have.property('o1')
+            })
         })
 
-        it('should return undefined', () => {
-            const o2 = {
-                'b1': true,
-                'n1': 123,
-                's1': undefined,
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.be.undefined
-            expect(desired)
-                .to.be.null
+        context('Arrays', () => {
+            it('should ignore like arrays', () => {
+                const o2 = {
+                    'b1': true,
+                    'n1': 123,
+                    's1': 's1v',
+                    's2': 'string',
+                    'a1': [
+                        123
+                    ]
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.have.property('s2')
+                    .to.eql('string')
+                expect(reported)
+                    .to.not.have.property('s1')
+                expect(reported)
+                    .to.not.have.property('b1')
+                expect(reported)
+                    .to.not.have.property('n1')
+                expect(reported)
+                    .to.not.have.property('a1')
+                expect(reported)
+                    .to.not.have.property('o1')
+                expect(desired)
+                    .to.have.property('s2')
+                    .to.be.null
+                expect(desired)
+                    .to.not.have.property('s1')
+                expect(desired)
+                    .to.not.have.property('b1')
+                expect(desired)
+                    .to.not.have.property('n1')
+                expect(desired)
+                    .to.not.have.property('a1')
+                expect(desired)
+                    .to.not.have.property('o1')
+            })
+            it('should return changed arrays', () => {
+                const o2 = {
+                    'b1': true,
+                    'n1': 123,
+                    's1': 's1v',
+                    'a1': [
+                        123,
+                        456
+                    ]
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.have.property('a1')
+                    .to.have.length(2)
+                expect(reported)
+                    .to.not.have.property('s1')
+                expect(reported)
+                    .to.not.have.property('b1')
+                expect(reported)
+                    .to.not.have.property('n1')
+                expect(reported)
+                    .to.not.have.property('o1')
+                expect(desired)
+                    .to.have.property('a1')
+                    .to.be.null
+                expect(desired)
+                    .to.not.have.property('s1')
+                expect(desired)
+                    .to.not.have.property('b1')
+                expect(desired)
+                    .to.not.have.property('n1')
+                expect(desired)
+                    .to.not.have.property('o1')
+            })
         })
-        it('should return null', () => {
-            const o2 = {
-                'b1': true,
-                'n1': 123,
-                's1': null,
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.have.property('s1')
-                .to.be.null
-            expect(reported)
-                .to.not.have.property('b1')
-            expect(reported)
-                .to.not.have.property('n1')
-            expect(reported)
-                .to.not.have.property('a1')
-            expect(reported)
-                .to.not.have.property('o1')
-            expect(desired)
-                .to.have.property('s1')
-                .to.be.null
-            expect(desired)
-                .to.not.have.property('b1')
-            expect(desired)
-                .to.not.have.property('n1')
-            expect(desired)
-                .to.not.have.property('a1')
-            expect(desired)
-                .to.not.have.property('o1')
+
+        context('Objects', () => {
+            it('should return nested diff', () => {
+                const o2 = {
+                    'o1': {
+                        's11': 'newvalue'
+                    },
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.have.property('o1')
+                    .to.eql({
+                        's11': 'newvalue'
+                    })
+                expect(reported)
+                    .to.not.have.property('b1')
+                expect(reported)
+                    .to.not.have.property('n1')
+                expect(reported)
+                    .to.not.have.property('a1')
+                expect(desired)
+                    .to.have.property('o1')
+                    .to.be.null
+                expect(desired)
+                    .to.not.have.property('b1')
+                expect(desired)
+                    .to.not.have.property('n1')
+                expect(desired)
+                    .to.not.have.property('a1')
+            })
+            it('should return empty object on nested match', () => {
+                const o2 = {
+                    'o1': {
+                        's11': 's11v'
+                    },
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.eql({})
+                expect(desired)
+                    .to.be.null
+            })
+            it('should return if not defined in state', () => {
+                const o2 = {
+                    'o1': {
+                        's12': 's11v'
+                    },
+                }
+                const tester = new EndpointTest({}, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.eql(o2)
+                expect(desired)
+                    .to.have.property('o1')
+                    .to.be.null
+            })
+            it('should return null nested object', () => {
+                const o2 = {
+                    'o1': null,
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.have.property('o1')
+                    .to.be.null
+                expect(desired)
+                    .to.have.property('o1')
+                    .to.be.null
+            })
+            it('should return undefined nested object if nested object is undefined', () => {
+                const o2 = {
+                    'o1': undefined,
+                }
+                const tester = new EndpointTest(o1, 'state')
+                const shadow = tester.testShadow(o2)
+                const reported = shadow.reported
+                const desired = shadow.desired
+                expect(reported)
+                    .to.eql({})
+                expect(desired)
+                    .to.be.null
+            })
+
         })
-        it('should return nested diff', () => {
-            const o2 = {
-                'o1': {
-                    's11': 'newvalue'
-                },
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.have.property('o1')
-                .to.eql({
-                    's11': 'newvalue'
-                })
-            expect(reported)
-                .to.not.have.property('b1')
-            expect(reported)
-                .to.not.have.property('n1')
-            expect(reported)
-                .to.not.have.property('a1')
-            expect(desired)
-                .to.have.property('o1')
-                .to.be.null
-            expect(desired)
-                .to.not.have.property('b1')
-            expect(desired)
-                .to.not.have.property('n1')
-            expect(desired)
-                .to.not.have.property('a1')
-        })
-        it('should return undefined on nested match', () => {
-            const o2 = {
-                'o1': {
-                    's11': 's11v'
-                },
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.be.undefined
-            expect(desired)
-                .to.be.null
-        })
-        it('should return if not defined in state', () => {
-            const o2 = {
-                'o1': {
-                    's12': 's11v'
-                },
-            }
-            const tester = new EndpointTest({}, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.eql(o2)
-            expect(desired)
-                .to.have.property('o1')
-                .to.be.null
-        })
-        it('should return null nested object', () => {
-            const o2 = {
-                'o1': null,
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.have.property('o1')
-                .to.be.null
-            expect(desired)
-                .to.have.property('o1')
-                .to.be.null
-        })
-        it('should return undefined nested object if nested object is undefined', () => {
-            const o2 = {
-                'o1': undefined,
-            }
-            const tester = new EndpointTest(o1, 'state')
-            const shadow = tester.testShadow(o2)
-            const reported = shadow.reported
-            const desired = shadow.desired
-            expect(reported)
-                .to.be.undefined
-            expect(desired)
-                .to.be.null
-        })
+
     })
 })
 

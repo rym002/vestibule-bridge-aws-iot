@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "prepack": "tsc",
-    "test": "mocha -r ts-node/register --extension ts --recursive --exit",
+    "test": "mocha",
     "clean": "rm .npmrc"
   },
   "keywords": [],
@@ -18,7 +18,9 @@
   "dependencies": {
     "@vestibule-link/bridge": "^1.1.3",
     "aws-iot-device-sdk-v2": "^1.3.5",
-    "lodash": "^4.17.20"
+    "fast-json-patch": "^3.0.0-1",
+    "lodash": "^4.17.20",
+    "uuid": "^8.3.2"
   },
   "peerDependencies": {
     "@vestibule-link/bridge-service-provider": "^2.1.1"
@@ -29,6 +31,7 @@
     "@types/mocha": "^8.0.4",
     "@types/node": "^12.19.12",
     "@types/sinon": "^7.5.2",
+    "@types/uuid": "^8.3.0",
     "@vestibule-link/bridge-service-provider": "^2.2.0",
     "chai": "^4.2.0",
     "mocha": "^8.2.1",
