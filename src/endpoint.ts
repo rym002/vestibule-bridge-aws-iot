@@ -1,9 +1,9 @@
+import { EndpointConnector } from '@vestibule-link/bridge-service-provider';
 import { iotshadow, mqtt } from "aws-iot-device-sdk-v2";
 import { ShadowState } from "aws-iot-device-sdk-v2/dist/iotshadow/model";
 import { EventEmitter } from "events";
 import { isArray, isEmpty, isEqual, isObject, mapValues, pickBy } from "lodash";
-import { iotConfig, awsConnection } from "./iot";
-import { EndpointConnector } from '@vestibule-link/bridge-service-provider'
+import { awsConnection, iotConfig } from "./iot";
 interface NamedShadowRequest {
     shadowName: string;
     thingName: string;
@@ -68,10 +68,10 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
                 mqtt.QoS.AtLeastOnce, this.shadowDeltaHandler.bind(this))
         this.verifyMqttSubscription(shadowDelta)
 
-        const shadowUpdateAccepted = await this.shadowClient
-            .subscribeToUpdateNamedShadowAccepted(this.namedShadowRequest,
-                mqtt.QoS.AtLeastOnce, this.shadowUpdateAcceptedHandler.bind(this))
-        this.verifyMqttSubscription(shadowUpdateAccepted)
+        const shadowUpdated = await this.shadowClient
+            .subscribeToNamedShadowUpdatedEvents(this.namedShadowRequest,
+                mqtt.QoS.AtLeastOnce, this.shadowUpdatedHandler.bind(this))
+        this.verifyMqttSubscription(shadowUpdated)
 
         const deleteShadow = await this.shadowClient
             .publishDeleteNamedShadow(this.namedShadowRequest, mqtt.QoS.AtLeastOnce)
@@ -144,12 +144,13 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         }
     }
 
-    private async shadowUpdateAcceptedHandler(error?: iotshadow.IotShadowError, response?: iotshadow.model.UpdateShadowResponse) {
+    private async shadowUpdatedHandler(error?: iotshadow.IotShadowError, response?: iotshadow.model.ShadowUpdatedEvent) {
         this.handleShadowError('Update', error)
         if (response) {
-            if (this.checkVersion(response.version)) {
-                this.shadowVersion = response.version
-                this._reportedState = <ShadowType>response.state.reported
+            const current = response.current
+            if (this.checkVersion(current.version)) {
+                this.shadowVersion = current.version
+                this._reportedState = <ShadowType>current.state.reported
             }
         }
     }
@@ -167,15 +168,17 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
         }
     }
 
-    protected publishReportedState(state: ShadowType) {
-        const shadow = this.createShadow(state)
-        if (shadow.reported) {
-            this.shadowClient.publishUpdateNamedShadow({
-                ...this.namedShadowRequest,
-                state: shadow
-            }, mqtt.QoS.AtLeastOnce)
-        } else {
-            console.info('Shadow Reported not changed, skipping updated')
+    protected publishReportedState(state?: ShadowType) {
+        if (state) {
+            const shadow = this.createShadow(state)
+            if (shadow.reported) {
+                this.shadowClient.publishUpdateNamedShadow({
+                    ...this.namedShadowRequest,
+                    state: shadow
+                }, mqtt.QoS.AtLeastOnce)
+            } else {
+                console.info('Shadow Reported not changed, skipping updated')
+            }
         }
     }
 

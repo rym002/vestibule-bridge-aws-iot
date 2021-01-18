@@ -120,10 +120,10 @@ describe('Endpoint test', () => {
                 })
             sandbox.assert.called(spy)
         })
-        it('should update remoteShadow when shadow update accepted', async function () {
+        it('should update remoteShadow when shadow update documents', async function () {
             const topicHandlerMap = this.test['topicHandlerMap']
             const endpointId = 'updateShadow'
-            const topic = `$aws/things/${clientId}/shadow/name/${endpointId}/update/accepted`
+            const topic = `$aws/things/${clientId}/shadow/name/${endpointId}/update/documents`
             const inputState = {
                 delta: true
             }
@@ -134,9 +134,11 @@ describe('Endpoint test', () => {
                 topic,
                 topic,
                 {
-                    version: 2,
-                    state: {
-                        reported: inputState
+                    current: {
+                        version: 2,
+                        state: {
+                            reported: inputState
+                        }
                     }
                 })
             expect(instance.reportedState).to.eql(inputState)
