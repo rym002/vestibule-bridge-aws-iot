@@ -46,15 +46,24 @@ export abstract class AbstractIotShadowEndpoint<ShadowType extends object> exten
     constructor(readonly endpointId: string) {
         super()
         const appConfig = iotConfig()
-        this.shadowClient = new iotshadow.IotShadowClient(awsConnection());
+        const connection = awsConnection();
+        this.shadowClient = new iotshadow.IotShadowClient(connection);
         this.namedShadowRequest = {
             shadowName: endpointId,
             thingName: appConfig.clientId
         }
+        connection.on('resume',this.resumeConnection.bind(this))
     }
 
     get reportedState() {
         return this._reportedState
+    }
+
+    private async resumeConnection(returnCode:number,sessionPresent:boolean):Promise<void>{
+        console.log('Resume Connection returnCode:%s session:%s', returnCode, sessionPresent)
+        if (!sessionPresent){
+            await this.subscribeMessages()
+        }
     }
     public async subscribeMessages(): Promise<void> {
         const deleteAccepted = await this.shadowClient
