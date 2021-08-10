@@ -22,13 +22,13 @@ class EndpointTest extends AbstractIotShadowEndpoint<{}>{
 }
 
 interface TopicHandlerMap {
-    [index: string]: (topic: string, payload: ArrayBuffer) => void | Promise<void>
+    [index: string]: (topic: string, payload: ArrayBuffer, dup: boolean, qos: mqtt.QoS, retain: boolean) => void | Promise<void>
 }
 const encoder = new TextEncoder()
 
 async function emitTopic(topicHandlerMap: TopicHandlerMap, listenTopic: string, topic: string, req: any) {
     const topicHandler = topicHandlerMap[listenTopic]
-    await topicHandler(topic, encoder.encode(JSON.stringify(req)))
+    await topicHandler(topic, encoder.encode(JSON.stringify(req)), false, mqtt.QoS.AtLeastOnce, false)
 }
 
 describe('Endpoint test', () => {
@@ -150,7 +150,7 @@ describe('Endpoint test', () => {
             const topic = `$aws/things/${clientId}/shadow/name/${endpointId}/delete`
             const instance = new EndpointTest({}, endpointId)
             await instance.subscribeMessages()
-            sandbox.assert.calledWithMatch(connection.publish, topic, match.any, mqtt.QoS.AtLeastOnce)
+            sandbox.assert.calledWithMatch(connection.publish, topic, match.any as any, mqtt.QoS.AtLeastOnce)
         })
     })
     context('Shadow Creation', function () {
